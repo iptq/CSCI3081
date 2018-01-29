@@ -1,0 +1,56 @@
+Question 1
+
+The name of the paper is "Bitcoin: A Peer-to-Peer Electronic Cash System", and
+it can be found at https://bitcoin.org/bitcoin.pdf.
+
+Question 2
+
+The purpose of the paper is to present a new system that uses cryptography to
+verify the authenticity of monetary transfers. It introduces the concept of a
+"blockchain".
+
+Question 3
+
+It seems that the intended audience of the paper is for cryptography enthusiasts
+or certain people who may be willing to implement and adopt such a protocol. It
+doesn't seem to be making any attempt to push this system as something that the
+masses should adopt; he's simply presenting this as a method of making
+verifiable and secure transfers.
+
+Question 4
+
+A. extremely important
+B. useful but not critical
+C. extremely important
+D. useful but not critical
+E. extremely important
+F. useful but not critical
+G. useful but not critical
+H. useful but not critical
+I. important if it's related to findings
+J. useful but not critical
+K. useful but not critical
+L. not very important
+M. not very important
+N. not very important
+O. useful but not critical
+
+Question 5
+
+The most successful element of the paper was the fact that he stated key
+information clearly. As this is a paper related to a protocol, some of the most
+important things that should be covered include the motivation behind certain
+designs. This information is clearly presented, usually beginning with the
+problem that the presented solution is intended to solve, and then the actual
+solution.
+
+Question 6
+
+The least successful element of the paper was integrating tables, diagrams,
+references into the text. Rather than using the diagrams effectively, the
+diagrams seem to be added into the paper after it has been written; the paper
+doesn't reference the images at all and there is an occasional caption to the
+image that explains what it means.
+
+
+

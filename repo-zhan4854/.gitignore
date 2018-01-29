@@ -1,0 +1,5 @@
+# Extensions to not include in repo
+.vscode
+*.o
+*.out
+*.pvt

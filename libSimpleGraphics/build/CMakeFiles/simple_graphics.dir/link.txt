@@ -1,0 +1,2 @@
+/usr/bin/ar qc libsimple_graphics.a  CMakeFiles/simple_graphics.dir/src/graphics_app.cc.o CMakeFiles/simple_graphics.dir/src/circle_viewer.cc.o
+/usr/bin/ranlib libsimple_graphics.a

@@ -1,0 +1,1 @@
+/usr/bin/c++   -std=c++14 -O3 -DNDEBUG  -rdynamic CMakeFiles/TestCircles.dir/src/main-circleviewer.cc.o  -o TestCircles -Wl,-rpath,/home/michael/Documents/School/CSCI3081/libSimpleGraphics/build/ext/nanogui libsimple_graphics.a ext/nanogui/libnanogui.so -lGL -lXxf86vm -lXrandr -lXinerama -lXcursor -lXi -lX11 -lpthread -lrt -ldl 

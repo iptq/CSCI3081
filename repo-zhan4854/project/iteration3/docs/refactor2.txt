@@ -1,0 +1,388 @@
+The first change I made was changing a tmp variable in MotionBehaviorRobot, used to calculate the amount to turn by to avoid the other entity. It was called 'tmp', and I renamed it to something more useful (current multiplier, vs. maximum multiplier).
+
+The second change I made was to rename all of the instances of Event *e, into evt. Although it might be fine in just the function definition (where it only says 'void Accept(Event *e)'), it does get confusing in the function implementation, especially if there are a lot of other variables involved. The variable name 'evt' literally reads 'event' and is a lot more helpful.
+
+The full diff is provided, for the list of files changed:
+
+diff --git a/project/iteration3/src/arena.cc b/project/iteration3/src/arena.cc
+index 50c7590..70aa787 100644
+--- a/project/iteration3/src/arena.cc
++++ b/project/iteration3/src/arena.cc
+@@ -439,7 +439,9 @@ void Arena::CheckProximity(const Robot *sensing, const SensorProximity *sensor,
+     }
+ }
+ 
+-void Arena::Accept(EventKeypress *e) { player_->EventCmd(e->get_keypress()); }
++void Arena::Accept(EventKeypress *evt) {
++    player_->EventCmd(evt->get_keypress());
++}
+ 
+ void Arena::RegisterSensor(Sensor *s) { sensors_.push_back(s); }
+ 
+diff --git a/project/iteration3/src/arena.h b/project/iteration3/src/arena.h
+index 94b5650..7b6425e 100644
+--- a/project/iteration3/src/arena.h
++++ b/project/iteration3/src/arena.h
+@@ -69,7 +69,7 @@ class Arena {
+     * @param[in] an event holding the key press.
+     *
+     */
+-    void Accept(EventKeypress *e);
++    void Accept(EventKeypress *evt);
+ 
+     //! @brief Reset all in the arena
+     void Reset(void);
+diff --git a/project/iteration3/src/arena_mobile_entity.h b/project/iteration3/src/arena_mobile_entity.h
+index c07d5d3..fac9691 100644
+--- a/project/iteration3/src/arena_mobile_entity.h
++++ b/project/iteration3/src/arena_mobile_entity.h
+@@ -113,7 +113,7 @@ class ArenaMobileEntity : public ArenaEntity {
+      * by the collision event and updating the velocity of the player
+      * accordingly.
+      */
+-    virtual void Accept(EventCollision *e) = 0;
++    virtual void Accept(EventCollision *evt) = 0;
+     /**
+      * @brief Handler function for recharge events.
+      *
+@@ -121,7 +121,7 @@ class ArenaMobileEntity : public ArenaEntity {
+      * player has collided with the recharge station and that the battery should
+      * return to its maximum charge.
+      */
+-    virtual void Accept(EventRecharge *e) = 0;
++    virtual void Accept(EventRecharge *evt) = 0;
+     /**
+      * @brief Gets the initial position of the current entity.
+      *
+diff --git a/project/iteration3/src/home_base.cc b/project/iteration3/src/home_base.cc
+index 5c63ebb..4fdd39a 100644
+--- a/project/iteration3/src/home_base.cc
++++ b/project/iteration3/src/home_base.cc
+@@ -33,12 +33,12 @@ void HomeBase::TimestepUpdate(double dt) {
+     h.UpdatePosition(this, dt);
+ } /* TimestepUpdate() */
+ 
+-void HomeBase::Accept(__unused EventRecharge *e) {}
++void HomeBase::Accept(__unused EventRecharge *evt) {}
+ 
+ // Pass along a collision event (from arena) to the touch sensor.
+ // This method provides a framework in which sensors can get different
+ // types of information from different sources.
+-void HomeBase::Accept(EventCollision *e) { get_sensor_touch()->Accept(e); }
++void HomeBase::Accept(EventCollision *evt) { get_sensor_touch()->Accept(evt); }
+ 
+ void HomeBase::Reset() { set_pos(get_initial()); }
+ 
+diff --git a/project/iteration3/src/home_base.h b/project/iteration3/src/home_base.h
+index 6986ed7..15f95fe 100644
+--- a/project/iteration3/src/home_base.h
++++ b/project/iteration3/src/home_base.h
+@@ -40,8 +40,8 @@ class HomeBase : public ArenaMobileEntity {
+     void set_heading_angle(double ha) { heading_angle_ = ha; }
+     double get_speed(void) { return speed_; }
+     void set_speed(double sp) { speed_ = sp; }
+-    void Accept(EventCollision *e);
+-    void Accept(EventRecharge *e);
++    void Accept(EventCollision *evt);
++    void Accept(EventRecharge *evt);
+ 
+  private:
+     //! @brief The current heading angle of the home base.
+diff --git a/project/iteration3/src/motion_behavior_robot.cc b/project/iteration3/src/motion_behavior_robot.cc
+index fdc6dc4..43892d3 100644
+--- a/project/iteration3/src/motion_behavior_robot.cc
++++ b/project/iteration3/src/motion_behavior_robot.cc
+@@ -23,17 +23,17 @@ void MotionBehaviorRobot::UpdatePosition(class Robot *bot, double dt) {
+                     *rsensor = bot->get_sensor_proximity_right();
+ 
+     // avoid other robots
+-    double multiplier = 0, tmp, sp, ini;
++    double multiplier = 0, curr_multiplier, sp, ini;
+     if (lsensor->get_activated() && lsensor->get_response() == kAvoid) {
+-        tmp = -lsensor->get_distance();
+-        if (abs(tmp) > abs(multiplier))
+-            multiplier = tmp;
++        curr_multiplier = -lsensor->get_distance();
++        if (abs(curr_multiplier) > abs(multiplier))
++            multiplier = curr_multiplier;
+         lsensor->set_activated(false);
+     }
+     if (rsensor->get_activated() && rsensor->get_response() == kAvoid) {
+-        tmp = rsensor->get_distance();
+-        if (abs(tmp) > abs(multiplier))
+-            multiplier = tmp;
++        curr_multiplier = rsensor->get_distance();
++        if (abs(curr_multiplier) > abs(multiplier))
++            multiplier = curr_multiplier;
+         rsensor->set_activated(false);
+     }
+ 
+diff --git a/project/iteration3/src/player.cc b/project/iteration3/src/player.cc
+index e642e38..2bd872b 100644
+--- a/project/iteration3/src/player.cc
++++ b/project/iteration3/src/player.cc
+@@ -48,17 +48,17 @@ void Player::TimestepUpdate(double dt) {
+     // Also deplete the battery if the sensor was activated
+ } /* TimestepUpdate() */
+ 
+-void Player::Accept(__unused EventRecharge *e) { battery_.EventRecharge(); }
++void Player::Accept(__unused EventRecharge *evt) { battery_.EventRecharge(); }
+ 
+ // Pass along a collision event (from arena) to the touch sensor. This method
+ // provides a framework in which sensors can get different types of information
+ // from different sources.
+-void Player::Accept(EventCollision *e) {
+-    get_sensor_touch()->Accept(e);
++void Player::Accept(EventCollision *evt) {
++    get_sensor_touch()->Accept(evt);
+     // also deplete the battery
+-    battery_.Accept(e);
++    battery_.Accept(evt);
+     // also slow down the player
+-    motion_handler_.Accept(e);
++    motion_handler_.Accept(evt);
+ }
+ 
+ // User input commands to change heading or speed
+diff --git a/project/iteration3/src/player.h b/project/iteration3/src/player.h
+index 2c853a1..e8c10e9 100644
+--- a/project/iteration3/src/player.h
++++ b/project/iteration3/src/player.h
+@@ -59,8 +59,8 @@ class Player : public ArenaMobileEntity {
+     //! @brief An update function that will be called every time the simulation
+     //! steps by a frame.
+     void TimestepUpdate(double dt);
+-    void Accept(EventRecharge *e);
+-    void Accept(EventCollision *e);
++    void Accept(EventRecharge *evt);
++    void Accept(EventCollision *evt);
+ 
+     //! @brief Handles an EventCommand input from the player.
+     void EventCmd(EventCommand cmd);
+diff --git a/project/iteration3/src/player_battery.cc b/project/iteration3/src/player_battery.cc
+index 2806657..afe2bf8 100644
+--- a/project/iteration3/src/player_battery.cc
++++ b/project/iteration3/src/player_battery.cc
+@@ -30,8 +30,8 @@ double PlayerBattery::Deplete(__unused Position old_pos,
+     return charge_;
+ } /* deplete() */
+ 
+-void PlayerBattery::Accept(__unused EventCollision *e) {
+-    if (e->get_collided()) {
++void PlayerBattery::Accept(EventCollision *evt) {
++    if (evt->get_collided()) {
+         this->charge_ -= 10;
+     }
+ }
+diff --git a/project/iteration3/src/player_battery.h b/project/iteration3/src/player_battery.h
+index 1d23584..db76334 100644
+--- a/project/iteration3/src/player_battery.h
++++ b/project/iteration3/src/player_battery.h
+@@ -94,7 +94,7 @@ class PlayerBattery {
+      * The battery will discharge by a certain amount as a penalty for the
+      * collision.
+      */
+-    void Accept(EventCollision *e);
++    void Accept(EventCollision *evt);
+ 
+  private:
+     //! @brief The amount of charge that the battery is currently holding.
+diff --git a/project/iteration3/src/robot.cc b/project/iteration3/src/robot.cc
+index d6ccb4c..08c82ac 100644
+--- a/project/iteration3/src/robot.cc
++++ b/project/iteration3/src/robot.cc
+@@ -76,8 +76,8 @@ void Robot::TimestepUpdate(double dt) {
+     motion_behavior_.UpdatePosition(this, dt);
+ }
+ 
+-void Robot::Accept(__unused EventRecharge *e) {}
+-void Robot::Accept(__unused EventCollision *e) {}
++void Robot::Accept(__unused EventRecharge *evt) {}
++void Robot::Accept(__unused EventCollision *evt) {}
+ 
+ void Robot::upgrade() {
+     printf("im a big boi\n");
+diff --git a/project/iteration3/src/robot.h b/project/iteration3/src/robot.h
+index 7af0413..d3890f7 100644
+--- a/project/iteration3/src/robot.h
++++ b/project/iteration3/src/robot.h
+@@ -28,8 +28,8 @@ class Robot : public ArenaMobileEntity {
+     void Reset(void);
+     void TimestepUpdate(double dt);
+ 
+-    void Accept(EventRecharge *e);
+-    void Accept(EventCollision *e);
++    void Accept(EventRecharge *evt);
++    void Accept(EventCollision *evt);
+ 
+     void set_entity_type(enum entity_type entity_type) {
+         entity_type_ = entity_type;
+diff --git a/project/iteration3/src/sensor_distress.cc b/project/iteration3/src/sensor_distress.cc
+index 9d0742a..c1d1990 100644
+--- a/project/iteration3/src/sensor_distress.cc
++++ b/project/iteration3/src/sensor_distress.cc
+@@ -9,6 +9,6 @@
+ NAMESPACE_BEGIN(csci3081);
+ 
+ // TODO(zhan4854): Use distress sensor
+-void SensorDistress::Accept(__unused EventDistress *e) {}
++void SensorDistress::Accept(__unused EventDistress *evt) {}
+ 
+ NAMESPACE_END(csci3081);
+diff --git a/project/iteration3/src/sensor_distress.h b/project/iteration3/src/sensor_distress.h
+index 707ccca..be5e680 100644
+--- a/project/iteration3/src/sensor_distress.h
++++ b/project/iteration3/src/sensor_distress.h
+@@ -19,7 +19,7 @@ class SensorDistress : public Sensor {
+ 
+     void Reset() {}
+ 
+-    void Accept(EventDistress *e);
++    void Accept(EventDistress *evt);
+ };
+ 
+ NAMESPACE_END(csci3081);
+diff --git a/project/iteration3/src/sensor_entity_type.cc b/project/iteration3/src/sensor_entity_type.cc
+index b60d041..d62bd2c 100644
+--- a/project/iteration3/src/sensor_entity_type.cc
++++ b/project/iteration3/src/sensor_entity_type.cc
+@@ -8,10 +8,10 @@
+ 
+ NAMESPACE_BEGIN(csci3081);
+ 
+-void SensorEntityType::Accept(EventEntityType *e) {
+-    set_activated(e->get_activated());
+-    if (e->get_activated())
+-        set_entity_type(e->get_entity_type());
++void SensorEntityType::Accept(EventEntityType *evt) {
++    set_activated(evt->get_activated());
++    if (evt->get_activated())
++        set_entity_type(evt->get_entity_type());
+ }
+ 
+ NAMESPACE_END(csci3081);
+diff --git a/project/iteration3/src/sensor_entity_type.h b/project/iteration3/src/sensor_entity_type.h
+index ab2752f..e79e806 100644
+--- a/project/iteration3/src/sensor_entity_type.h
++++ b/project/iteration3/src/sensor_entity_type.h
+@@ -29,7 +29,7 @@ class SensorEntityType : public csci3081::Sensor {
+     /**
+      * @brief Handler for detecting nearby entities.
+      */
+-    void Accept(EventEntityType *e);
++    void Accept(EventEntityType *evt);
+ 
+     /**
+      * @brief Gets the entity type.
+diff --git a/project/iteration3/src/sensor_proximity.cc b/project/iteration3/src/sensor_proximity.cc
+index b443581..b22995f 100644
+--- a/project/iteration3/src/sensor_proximity.cc
++++ b/project/iteration3/src/sensor_proximity.cc
+@@ -9,15 +9,15 @@
+ 
+ NAMESPACE_BEGIN(csci3081);
+ 
+-void SensorProximity::Accept(EventProximity *e) {
+-    set_activated(e->get_activated());
+-    if (e->get_activated()) {
+-        set_distance(e->get_distance());
+-        set_sensed(e->get_sensed());
++void SensorProximity::Accept(EventProximity *evt) {
++    set_activated(evt->get_activated());
++    if (evt->get_activated()) {
++        set_distance(evt->get_distance());
++        set_sensed(evt->get_sensed());
+ 
+         // determine if we should target or avoid this
+         ProximitySignalResponse r;
+-        const ArenaEntity *ent = e->get_sensed();
++        const ArenaEntity *ent = evt->get_sensed();
+         const ArenaMobileEntity *entr =
+             dynamic_cast<const ArenaMobileEntity *>(ent);
+         switch (ent->get_entity_type()) {
+diff --git a/project/iteration3/src/sensor_proximity.h b/project/iteration3/src/sensor_proximity.h
+index ae3546f..5a00ecd 100644
+--- a/project/iteration3/src/sensor_proximity.h
++++ b/project/iteration3/src/sensor_proximity.h
+@@ -34,7 +34,7 @@ class SensorProximity : public Sensor {
+     }
+ 
+     void Reset() {}
+-    void Accept(EventProximity *e);
++    void Accept(EventProximity *evt);
+ 
+     Range<double> get_range() { return range_; }
+     void set_range(Range<double> range) { range_ = range; }
+diff --git a/project/iteration3/src/sensor_proximity_superbot.cc b/project/iteration3/src/sensor_proximity_superbot.cc
+index b101c6a..9aebb82 100644
+--- a/project/iteration3/src/sensor_proximity_superbot.cc
++++ b/project/iteration3/src/sensor_proximity_superbot.cc
+@@ -9,15 +9,15 @@
+ 
+ NAMESPACE_BEGIN(csci3081);
+ 
+-void SensorProximitySuperbot::Accept(EventProximity *e) {
+-    set_activated(e->get_activated());
+-    if (e->get_activated()) {
+-        set_distance(e->get_distance());
+-        set_sensed(e->get_sensed());
++void SensorProximitySuperbot::Accept(EventProximity *evt) {
++    set_activated(evt->get_activated());
++    if (evt->get_activated()) {
++        set_distance(evt->get_distance());
++        set_sensed(evt->get_sensed());
+ 
+         // determine if we should target or avoid this
+         ProximitySignalResponse r;
+-        const ArenaEntity *ent = e->get_sensed();
++        const ArenaEntity *ent = evt->get_sensed();
+         const ArenaMobileEntity *entr =
+             dynamic_cast<const ArenaMobileEntity *>(ent);
+         switch (ent->get_entity_type()) {
+diff --git a/project/iteration3/src/sensor_proximity_superbot.h b/project/iteration3/src/sensor_proximity_superbot.h
+index 408846d..4246679 100644
+--- a/project/iteration3/src/sensor_proximity_superbot.h
++++ b/project/iteration3/src/sensor_proximity_superbot.h
+@@ -13,7 +13,7 @@ NAMESPACE_BEGIN(csci3081);
+ 
+ class SensorProximitySuperbot : public SensorProximity {
+  public:
+-    void Accept(EventProximity *e);
++    void Accept(EventProximity *evt);
+ };
+ 
+ NAMESPACE_END(csci3081);
+diff --git a/project/iteration3/src/sensor_touch.cc b/project/iteration3/src/sensor_touch.cc
+index a4def15..1a4eff1 100644
+--- a/project/iteration3/src/sensor_touch.cc
++++ b/project/iteration3/src/sensor_touch.cc
+@@ -27,12 +27,12 @@ SensorTouch::SensorTouch()
+  * Member Functions
+  ******************************************************************************/
+ 
+-void SensorTouch::Accept(EventCollision *e) {
++void SensorTouch::Accept(EventCollision *evt) {
+     // Determine if the sensor should be activated or inactivated.
+-    if (e->get_collided()) {
++    if (evt->get_collided()) {
+         activated_ = true;
+-        point_of_contact_ = e->get_point_of_contact();
+-        angle_of_contact_ = e->get_angle_of_contact();
++        point_of_contact_ = evt->get_point_of_contact();
++        angle_of_contact_ = evt->get_angle_of_contact();
+     } else {
+         activated_ = false;
+     }
+diff --git a/project/iteration3/src/sensor_touch.h b/project/iteration3/src/sensor_touch.h
+index 668e46f..9801079 100644
+--- a/project/iteration3/src/sensor_touch.h
++++ b/project/iteration3/src/sensor_touch.h
+@@ -59,7 +59,7 @@ class SensorTouch : public Sensor {
+      * Note that collision events can report "no collision" which
+      * will inactivate the sensor.
+      */
+-    void Accept(EventCollision *e);
++    void Accept(EventCollision *evt);
+ 
+     /**
+      * @brief Reset the proximity sensor to its newly constructed state.

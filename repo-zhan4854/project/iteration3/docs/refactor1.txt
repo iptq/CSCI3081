@@ -1,0 +1,41 @@
+SHORTENED GIT DIFF:
+
+diff --git a/project/iteration3/src/color.h b/project/iteration3/src/color.h
+--- a/project/iteration3/src/color.h
++++ b/project/iteration3/src/color.h
+
+@@ -7,6 +7,8 @@
++#include <simple_graphics/graphics_app.h>
+ 
+@@ -34,6 +36,9 @@ 
++
++    //! @brief Converts this Color object into a nvgRGBA tuple.
++    NVGcolor toNVG() const { return nvgRGBA(r, g, b, a); }
+
+diff --git a/project/iteration3/src/graphics_arena_viewer.cc b/project/iteration3/src/graphics_arena_viewer.cc
+--- a/project/iteration3/src/graphics_arena_viewer.cc
++++ b/project/iteration3/src/graphics_arena_viewer.cc
+
+@@ -146,7 +132,6 @@
+-    csci3081::Color rcolor = player->get_color();
+ 
+@@ -157,9 +142,7 @@
+-    nvgFillColor(ctx,
+-                 nvgRGBA(static_cast<int>(rcolor.r), static_cast<int>(rcolor.g),
+-                         static_cast<int>(rcolor.b), 255));
++    nvgFillColor(ctx, player->get_color().toNVG());
+
+@@ -199,7 +182,6 @@
+-    csci3081::Color rcolor = robot->get_color();
+ 
+@@ -210,9 +192,7 @@
+-    nvgFillColor(ctx,
+-                 nvgRGBA(static_cast<int>(rcolor.r), static_cast<int>(rcolor.g),
+-                         static_cast<int>(rcolor.b), 255));
++    nvgFillColor(ctx, robot->get_color().toNVG());
+
+The new method I created is called toNVG(), on the color object. I changed all
+the instances of it in graphics_arena_viewer where it was being used to generate
+an nvgRGBA object. It seems that this conversion is actually quite common, and
+is repetitive and hard to read.  Rather than repeatedly spelling out each of the
+components individually, I simply made it part of the struct definition.

@@ -1,0 +1,13 @@
+This software is a robot arena simulator consisting of an arena that contains
+entities, some of which may be movable (such as the robots) and others which are
+immovable (such as the Recharge Station and various obstacles). The robots in
+this simulated arena have many of the properties that real robots do, including
+physical properties such as velocity and collision, and also architectural
+properties such as the need for a battery to operate and sensors in order to
+gather intel about its surroundings (in this case, the primary sensor that the
+robot uses is the touch/collision sensor). The arena takes advantage of
+events/event listener objects to handle interaction between the various entities
+within the arena. At the same time, the GraphicsArenaViewer is in charge of
+handling all input from the viewer of the simulation, such as mouse and keyboard
+input, as well as responsible for initiating the drawing of all the entities on
+the screen.
